@@ -1,0 +1,9 @@
+{
+  "deviceOrientation": "portrait",
+  "subPackages": [
+    {
+      "name": "play",
+      "root": "play/"
+    }
+  ]
+}
