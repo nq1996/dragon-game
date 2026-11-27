@@ -8,7 +8,8 @@ var createLayout = require('./layout.js').createLayout;
 var draw = require('./draw.js');
 var ui = require('./ui.js');
 var createSidebar = require('./sidebar.js').createSidebar;
-var createRewardedAd = require('./rewardedAd.js').createRewardedAd;
+var createAds = require('./ads.js').createAds;
+var adUnits = require('./adUnits.js');
 var createCustomerService = require('./customerService.js').createCustomerService;
 var createSensitiveInput = require('./sensitiveInput.js').createSensitiveInput;
 var createAudio = require('./audio.js').createAudio;
@@ -23,7 +24,7 @@ var registry = createRegistry();
 var loader = createLoader(ttApi);
 var progress = createProgress(platform.storage);
 var sidebar = createSidebar(ttApi);
-var rewardedAd = createRewardedAd(ttApi, { adUnitId: '' });
+var ads = createAds(ttApi, adUnits);
 var customerService = createCustomerService(ttApi);
 var sensitiveInput = createSensitiveInput(ttApi);
 var audio = createAudio(ttApi, platform.storage);
@@ -33,7 +34,9 @@ var current = null;
 
 var api = {
   layout: function () {
-    return createLayout(platform.getScreen());
+    var screen = platform.getScreen();
+    screen.bannerHeight = ads.getBannerHeight();
+    return createLayout(screen);
   },
   paintBackground: paintBackground,
   font: draw.font,
@@ -45,7 +48,28 @@ var api = {
     return sidebar;
   },
   getRewardedAd: function () {
-    return rewardedAd;
+    return ads;
+  },
+  getAds: function () {
+    return ads;
+  },
+  watchAdForShield: function () {
+    ads.show(function () {
+      progress.addShields(1);
+      platform.toast('护盾 +1');
+    }, function (msg) {
+      platform.toast(msg || '广告未完成');
+    }, '需看完广告才能获得护盾');
+  },
+  showBreakAd: function (done) {
+    var paused = false;
+    ads.showInterstitial(function () {
+      if (paused) audio.playMusic(true);
+      if (done) done();
+    }, function () {
+      paused = true;
+      audio.pauseMusic();
+    });
   },
   getCustomerService: function () {
     return customerService;
@@ -68,14 +92,18 @@ var api = {
   startGame: function (level) {
     var next = parseInt(level, 10);
     if (next >= 1) progress.setLevel(next);
+    ads.hideBanner();
     audio.unlock();
     audio.playSfx('start');
     audio.vibrate('short');
     beginPlay();
   },
   goHome: function () {
-    audio.playMusic(true);
     switchTo(home);
+    ads.hideBanner();
+    api.showBreakAd(function () {
+      ads.showBanner();
+    });
   }
 };
 
@@ -97,6 +125,7 @@ function beginPlay() {
     state.loadingPlay = false;
     var factory = registry.getScene('play');
     if (!factory) {
+      ads.showBanner();
       home.showTip('加载失败，请重试');
       return;
     }
@@ -105,6 +134,7 @@ function beginPlay() {
   }, function (err) {
     state.loadingPlay = false;
     console.error('分包加载失败', err);
+    ads.showBanner();
     home.showTip('加载失败，请重试');
   });
 }
@@ -114,6 +144,7 @@ platform.listenTouch(function () {
 });
 
 switchTo(home);
+ads.showBanner();
 
 var last = 0;
 function frame(now) {

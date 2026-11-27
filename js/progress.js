@@ -18,7 +18,7 @@ function titleForLevel(level) {
   if (level >= 400) return '海域王者';
   if (level >= 200) return '远洋征服者';
   if (level >= 100) return '百关潜行者';
-  if (level >= 50) return '水中游神';
+  if (level >= 50) return '水中鱼游神';
   if (level >= 46) return '海域传奇';
   if (level >= 41) return '深渊霸主';
   if (level >= 36) return '光带舞者';

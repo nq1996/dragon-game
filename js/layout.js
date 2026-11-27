@@ -12,17 +12,20 @@ function createLayout(screen) {
   var btnH = px(68);
   var mineW = px(44);
   var mineH = px(44);
+  var shieldW = px(44);
+  var shieldH = px(44);
   var stackGap = px(12);
-  // Vertical stack: start centered, “我的” on the next row right-aligned.
+  var bottomInset = (screen.safeBottom || 0) + (screen.bannerHeight || 0);
+  // Start stays centered. Shield sits bottom-left, profile icon bottom-right.
   var mineX = w - px(20) - mineW;
-  var mineY = h - screen.safeBottom - px(16) - mineH;
+  var mineY = h - bottomInset - px(16) - mineH;
   var btnX = (w - btnW) / 2;
   var btnY = mineY - stackGap - btnH;
   var minY = shoreY + px(12);
-  if (btnY < minY) {
-    btnY = minY;
-    mineY = btnY + btnH + stackGap;
-  }
+  if (btnY < minY) btnY = minY;
+  if (btnY + btnH + stackGap > mineY) btnY = mineY - stackGap - btnH;
+  var shieldX = px(20);
+  var shieldY = mineY + (mineH - shieldH) / 2;
 
   var pillY = screen.safeTop + px(18);
   var pillH = px(34);
@@ -80,6 +83,13 @@ function createLayout(screen) {
       y: mineY,
       w: mineW,
       h: mineH,
+      r: px(12)
+    },
+    shieldButton: {
+      x: shieldX,
+      y: shieldY,
+      w: shieldW,
+      h: shieldH,
       r: px(12)
     },
     pill: {

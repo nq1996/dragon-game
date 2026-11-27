@@ -346,12 +346,13 @@ function createPlayScene(api) {
         endTip = msg || failMsg || '广告暂未开通';
         endTipT = 1800;
         if (api.toast) api.toast(endTip);
-      }
+      },
+      failMsg
     );
   }
 
   function requestRevive() {
-    showAd(reviveAfterAd, '广告暂未开通');
+    showAd(reviveAfterAd, '需看完广告才能复活');
   }
 
   function requestAdRetry() {
@@ -1176,13 +1177,17 @@ function createPlayScene(api) {
         }
         if (primary) {
           if (phase === 'clear') {
-            failCount = 0;
-            if (level >= MAX_LEVEL) {
-              api.getProgress().setLevel(1);
-              reset(true, 1);
-            } else {
-              reset(true, level + 1);
-            }
+            var advance = function () {
+              failCount = 0;
+              if (level >= MAX_LEVEL) {
+                api.getProgress().setLevel(1);
+                reset(true, 1);
+              } else {
+                reset(true, level + 1);
+              }
+            };
+            if (api.showBreakAd) api.showBreakAd(advance);
+            else advance();
           } else if (needsAdToRetry()) {
             requestAdRetry();
           } else {

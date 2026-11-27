@@ -9,6 +9,7 @@ function createHomeScene(api) {
   var settingsToggleKey = '';
   var nickPressed = false;
   var minePressed = false;
+  var shieldPressed = false;
   var mineClosePressed = false;
   var itemPressed = null;
   var giftOpen = false;
@@ -43,6 +44,10 @@ function createHomeScene(api) {
 
   function mineRect(layout) {
     return layout.mineButton;
+  }
+
+  function shieldRect(layout) {
+    return layout.shieldButton;
   }
 
   function settingsPanel(layout) {
@@ -653,7 +658,7 @@ function createHomeScene(api) {
     ctx.fillText('1、点击侧边栏图标 ☰', contentX, y1);
 
     var y2 = y1 + layout.px(34);
-    ctx.fillText('2、点击「水中游」', contentX, y2);
+    ctx.fillText('2、点击「水中鱼游」', contentX, y2);
 
     var y3 = y2 + layout.px(34);
     ctx.fillText('3、领取奖励', contentX, y3);
@@ -786,6 +791,50 @@ function createHomeScene(api) {
     ctx.quadraticCurveTo(cx, cy + layout.px(1), cx + layout.px(8), cy + layout.px(8));
     ctx.quadraticCurveTo(cx, cy + layout.px(12), cx - layout.px(8), cy + layout.px(8));
     ctx.fill();
+    ctx.restore();
+  }
+
+  function drawShieldEntry(ctx, layout) {
+    var rect = shieldRect(layout);
+    if (!rect) return;
+    var cx = rect.x + rect.w / 2;
+    var cy = rect.y + rect.h / 2;
+    var hot = shieldPressed;
+    var r = layout.px(18);
+    var shields = api.getProgress().getShields();
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 16, 32, 0.35)';
+    ctx.shadowBlur = hot ? 4 : 8;
+    ctx.shadowOffsetY = hot ? 1 : 3;
+    ctx.fillStyle = hot ? 'rgba(28, 78, 128, 0.92)' : 'rgba(18, 62, 108, 0.82)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = 'rgba(180, 220, 255, 0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - layout.px(9));
+    ctx.quadraticCurveTo(cx + layout.px(8), cy - layout.px(7), cx + layout.px(7), cy - layout.px(1));
+    ctx.quadraticCurveTo(cx + layout.px(5), cy + layout.px(5), cx, cy + layout.px(9));
+    ctx.quadraticCurveTo(cx - layout.px(5), cy + layout.px(5), cx - layout.px(7), cy - layout.px(1));
+    ctx.quadraticCurveTo(cx - layout.px(8), cy - layout.px(7), cx, cy - layout.px(9));
+    ctx.closePath();
+    ctx.fillStyle = '#EAF7FF';
+    ctx.fill();
+    ctx.fillStyle = '#1A4E86';
+    ctx.font = api.font('bold', 11, layout.s);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(shields > 9 ? '9+' : String(shields), cx, cy + layout.px(1));
+    ctx.fillStyle = '#F4A02A';
+    ctx.beginPath();
+    ctx.arc(cx + layout.px(12), cy - layout.px(12), layout.px(7), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = api.font('bold', 12, layout.s);
+    ctx.fillText('+', cx + layout.px(12), cy - layout.px(11));
     ctx.restore();
   }
 
@@ -965,6 +1014,7 @@ function createHomeScene(api) {
       settingsToggleKey = '';
       nickPressed = false;
       minePressed = false;
+      shieldPressed = false;
       mineClosePressed = false;
       itemPressed = null;
       giftOpen = false;
@@ -995,6 +1045,7 @@ function createHomeScene(api) {
       drawGiftEntry(ctx, layout, progress, now);
       drawCsEntry(ctx, layout);
       drawMineEntry(ctx, layout);
+      drawShieldEntry(ctx, layout);
       api.ui.drawPrimaryButton(
         ctx,
         layout.startButton,
@@ -1022,6 +1073,7 @@ function createHomeScene(api) {
         settingsPressed = false;
         nickPressed = false;
         minePressed = false;
+        shieldPressed = false;
         return;
       }
 
@@ -1078,6 +1130,11 @@ function createHomeScene(api) {
         pressed = false;
         return;
       }
+      if (shieldRect(layout) && api.ui.hit(shieldRect(layout), x, y)) {
+        shieldPressed = true;
+        pressed = false;
+        return;
+      }
       pressed = api.ui.hit(buttonRect(), x, y);
     },
     onTouchMove: function (x, y) {
@@ -1112,6 +1169,7 @@ function createHomeScene(api) {
       if (giftPressed && !api.ui.hit(giftRect(layout), x, y)) giftPressed = false;
       if (csPressed && !api.ui.hit(csRect(layout), x, y)) csPressed = false;
       if (minePressed && !api.ui.hit(mineRect(layout), x, y)) minePressed = false;
+      if (shieldPressed && shieldRect(layout) && !api.ui.hit(shieldRect(layout), x, y)) shieldPressed = false;
       if (pressed && !api.ui.hit(buttonRect(), x, y)) pressed = false;
     },
     onTouchEnd: function (x, y) {
@@ -1124,6 +1182,7 @@ function createHomeScene(api) {
         csPressed = false;
         settingsPressed = false;
         minePressed = false;
+        shieldPressed = false;
         return;
       }
       if (mineOpen) {
@@ -1205,12 +1264,14 @@ function createHomeScene(api) {
       var openGift = giftPressed && api.ui.hit(giftRect(layout), x, y);
       var openCs = csPressed && api.ui.hit(csRect(layout), x, y);
       var openMine = minePressed && api.ui.hit(mineRect(layout), x, y);
+      var watchShield = shieldPressed && shieldRect(layout) && api.ui.hit(shieldRect(layout), x, y);
       var shouldStart = pressed && api.ui.hit(buttonRect(), x, y);
       settingsPressed = false;
       giftPressed = false;
       csPressed = false;
       nickPressed = false;
       minePressed = false;
+      shieldPressed = false;
       pressed = false;
       if (api.isLoadingPlay()) return;
       if (openSettings) {
@@ -1218,6 +1279,11 @@ function createHomeScene(api) {
         giftOpen = false;
         mineOpen = false;
         if (api.getAudio) api.getAudio().playSfx('click');
+        return;
+      }
+      if (watchShield) {
+        if (api.getAudio) api.getAudio().playSfx('click');
+        if (api.watchAdForShield) api.watchAdForShield();
         return;
       }
       if (openMine) {
@@ -1271,6 +1337,7 @@ function createHomeScene(api) {
       settingsToggleKey = '';
       nickPressed = false;
       minePressed = false;
+      shieldPressed = false;
       mineClosePressed = false;
       itemPressed = null;
       recordHit = null;
